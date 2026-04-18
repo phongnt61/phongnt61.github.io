@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CDN Gen Link</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    label span {
+      font-weight: 400;
+      color: #aaa;
+      margin-left: 4px;
+    }
+
+    select, input {
+      padding: 10px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #222;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, input:focus { border-color: #4f6ef7; }
+
+    button.generate {
+      width: 100%;
+      padding: 12px;
+      background: #4f6ef7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    button.generate:hover { background: #3a57d6; }
+    button.generate:disabled { background: #a0aed8; cursor: not-allowed; }
+
+    .result-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 12px;
+    }
+
+    .url-item {
+      background: #f7f8fc;
+      border: 1.5px solid #e8eaf0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .url-text {
+      font-size: 12px;
+      color: #333;
+      word-break: break-all;
+      flex: 1;
+      line-height: 1.6;
+    }
+
+    .url-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #4f6ef7;
+      margin-bottom: 4px;
+    }
+
+    button.copy {
+      padding: 6px 12px;
+      background: #fff;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    button.copy:hover { border-color: #4f6ef7; color: #4f6ef7; }
+    button.copy.copied { border-color: #22c55e; color: #22c55e; }
+
+    .error {
+      color: #ef4444;
+      font-size: 13px;
+      padding: 10px 14px;
+      background: #fff1f1;
+      border-radius: 8px;
+      border: 1px solid #fca5a5;
+    }
+
+    .loading {
+      color: #888;
+      font-size: 13px;
+      text-align: center;
+      padding: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>CDN Gen Link</h1>
+
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>CDN</label>
+          <select id="cdn">
+            <option value="bp">bp</option>
+            <option value="atm">atm</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Content ID</label>
+          <input id="content_id" type="text" placeholder="vd: 155" />
+        </div>
+
+        <div class="form-group">
+          <label>Timeshift <span>optional</span></label>
+          <input id="timeshift" type="number" placeholder="vd: 379" />
+        </div>
+
+        <div class="form-group">
+          <label>Begin <span>optional · GMT</span></label>
+          <input id="begin" type="text" placeholder="2026-04-18T00:35:00" maxlength="19" />
+        </div>
+
+        <div class="form-group">
+          <label>End <span>optional · GMT</span></label>
+          <input id="end" type="text" placeholder="2026-04-18T00:40:00" maxlength="19" />
+        </div>
+      </div>
+
+      <button class="generate" id="btn-generate" onclick="generate()">Tạo URL</button>
+    </div>
+
+    <div class="card" id="result-card" style="display:none">
+      <div class="result-title">Kết quả</div>
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://cdn-gen-link.onrender.com/gen-cdn-urls';
+
+    const DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
+
+    function toUTCWithSeconds(value) {
+      const v = value.trim();
+      if (!DATETIME_RE.test(v)) return null;
+      return (v.length === 16 ? v + ':00' : v) + 'Z';
+    }
+
+    function getLabel(url) {
+      if (url.includes('lowlat') || url.includes('lowlatency')) return 'Low Latency HLS';
+      if (url.endsWith('.mpd') || url.includes('CMAF')) return 'DASH / CMAF';
+      return 'HLS';
+    }
+
+    function showError(msg) {
+      const resultCard = document.getElementById('result-card');
+      const resultEl = document.getElementById('result');
+      resultCard.style.display = 'block';
+      resultEl.innerHTML = `<div class="error">${msg}</div>`;
+    }
+
+    function renderUrls(urls) {
+      const resultCard = document.getElementById('result-card');
+      const resultEl = document.getElementById('result');
+      resultCard.style.display = 'block';
+      resultEl.innerHTML = urls.map(url => `
+        <div class="url-item">
+          <div style="flex:1">
+            <div class="url-label">${getLabel(url)}</div>
+            <div class="url-text">${url.replace(/&/g, '&amp;')}</div>
+          </div>
+          <button class="copy" data-url="${url.replace(/"/g, '&quot;')}">Copy</button>
+        </div>
+      `).join('');
+
+      resultEl.querySelectorAll('button.copy').forEach(btn => {
+        btn.addEventListener('click', () => copyUrl(btn, btn.dataset.url));
+      });
+    }
+
+    async function generate() {
+      const cdn        = document.getElementById('cdn').value;
+      const content_id = document.getElementById('content_id').value.trim();
+      const timeshift  = document.getElementById('timeshift').value.trim();
+      const beginRaw   = document.getElementById('begin').value.trim();
+      const endRaw     = document.getElementById('end').value.trim();
+
+      if (!content_id) return showError('Vui lòng nhập Content ID.');
+
+      if (beginRaw && !DATETIME_RE.test(beginRaw))
+        return showError('Begin không đúng định dạng. Ví dụ: 2026-04-18T00:35:00');
+
+      if (endRaw && !DATETIME_RE.test(endRaw))
+        return showError('End không đúng định dạng. Ví dụ: 2026-04-18T00:40:00');
+
+      const body = { cdn, content_id };
+      if (timeshift)  body.timeshift = Number(timeshift);
+      if (beginRaw)   body.begin = toUTCWithSeconds(beginRaw);
+      if (endRaw)     body.end   = toUTCWithSeconds(endRaw);
+
+      const btn = document.getElementById('btn-generate');
+      btn.disabled = true;
+      btn.textContent = 'Đang tạo...';
+
+      document.getElementById('result-card').style.display = 'block';
+      document.getElementById('result').innerHTML = '<div class="loading">Đang kết nối server...</div>';
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([body])
+        });
+
+        if (!res.ok) throw new Error(`Server lỗi: ${res.status}`);
+
+        const data = await res.json();
+        const item = data[0];
+
+        if (item.error) return showError(item.error);
+
+        renderUrls(item.urls);
+      } catch (err) {
+        showError(`Không kết nối được server. ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Tạo URL';
+      }
+    }
+
+    function copyUrl(btn, url) {
+      navigator.clipboard.writeText(url).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+      });
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') generate();
+    });
+  </script>
+</body>
+</html>

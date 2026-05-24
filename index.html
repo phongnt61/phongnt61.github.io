@@ -185,6 +185,11 @@
           <label>End <span>optional · GMT</span></label>
           <input id="end" type="text" placeholder="2026-04-18T00:40:00" maxlength="19" />
         </div>
+
+        <div class="form-group">
+          <label>Expire <span>optional · phút · mặc định 15</span></label>
+          <input id="expire_min" type="number" placeholder="15" min="1" />
+        </div>
       </div>
 
       <button class="generate" id="btn-generate" onclick="generate()">Tạo URL</button>
@@ -254,10 +259,13 @@
       if (endRaw && !DATETIME_RE.test(endRaw))
         return showError('End không đúng định dạng. Ví dụ: 2026-04-18T00:40:00');
 
+      const expireMin = document.getElementById('expire_min').value.trim();
+
       const body = { cdn, content_id };
-      if (timeshift)  body.timeshift = Number(timeshift);
-      if (beginRaw)   body.begin = toUTCWithSeconds(beginRaw);
-      if (endRaw)     body.end   = toUTCWithSeconds(endRaw);
+      if (timeshift)  body.timeshift      = Number(timeshift);
+      if (beginRaw)   body.begin          = toUTCWithSeconds(beginRaw);
+      if (endRaw)     body.end            = toUTCWithSeconds(endRaw);
+      if (expireMin)  body.expire_minutes = Number(expireMin);
 
       const btn = document.getElementById('btn-generate');
       btn.disabled = true;

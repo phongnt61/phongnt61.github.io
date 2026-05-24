@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gen Link POP</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    .container { max-width: 720px; margin: 0 auto; }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 14px;
+    }
+
+    .section-title span { font-weight: 400; color: #aaa; margin-left: 4px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .span-2 { grid-column: span 2; }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    label span {
+      font-weight: 400;
+      color: #aaa;
+      margin-left: 4px;
+    }
+
+    select, input {
+      padding: 10px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #222;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    input[type="password"] { letter-spacing: 0.05em; }
+
+    select:focus, input:focus { border-color: #4f6ef7; }
+
+    .divider {
+      border: none;
+      border-top: 1.5px solid #f0f0f0;
+      margin: 20px 0;
+    }
+
+    details summary {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4f6ef7;
+      cursor: pointer;
+      user-select: none;
+      padding: 8px 0;
+      list-style: none;
+    }
+
+    details summary::before {
+      content: '▶ ';
+      font-size: 10px;
+    }
+
+    details[open] summary::before { content: '▼ '; }
+
+    details .form-grid { margin-top: 14px; }
+
+    button.generate {
+      width: 100%;
+      padding: 12px;
+      background: #4f6ef7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+
+    button.generate:hover { background: #3a57d6; }
+
+    button.secondary {
+      padding: 8px 16px;
+      background: #fff;
+      border: 1.5px solid #4f6ef7;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4f6ef7;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.15s;
+    }
+
+    button.secondary:hover { background: #eef1fd; }
+
+    .result-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 12px;
+    }
+
+    .url-item {
+      background: #f7f8fc;
+      border: 1.5px solid #e8eaf0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .url-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #4f6ef7;
+      margin-bottom: 4px;
+    }
+
+    .url-text {
+      font-size: 12px;
+      color: #333;
+      word-break: break-all;
+      flex: 1;
+      line-height: 1.6;
+    }
+
+    button.copy {
+      padding: 6px 12px;
+      background: #fff;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    button.copy:hover { border-color: #4f6ef7; color: #4f6ef7; }
+    button.copy.copied { border-color: #22c55e; color: #22c55e; }
+
+    .payload-preview {
+      background: #1a1a2e;
+      color: #a8d8a8;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 12px;
+      font-family: 'Menlo', 'Monaco', monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+
+    .error {
+      color: #ef4444;
+      font-size: 13px;
+      padding: 10px 14px;
+      background: #fff1f1;
+      border-radius: 8px;
+      border: 1px solid #fca5a5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Gen Link POP</h1>
+
+    <!-- Decode section -->
+    <div class="card">
+      <div class="section-title">Decode từ POP URL có sẵn <span>optional · tự điền form</span></div>
+      <div class="form-group">
+        <label>POP URL mẫu</label>
+        <input id="decode_url" type="text"
+          placeholder="https://pop2-ec3-ateme.tv360.vn/tok_eyJ.../video1/..." />
+      </div>
+      <button class="secondary" onclick="decodeFromUrl()">Decode &amp; điền form</button>
+    </div>
+
+    <!-- Main form -->
+    <div class="card">
+      <div class="section-title">Thông tin cơ bản</div>
+      <div class="form-grid">
+        <div class="form-group span-2">
+          <label>POP Domain</label>
+          <input id="pop_domain" type="text" placeholder="pop2-ec3-ateme.tv360.vn" />
+        </div>
+        <div class="form-group span-2">
+          <label>Content Path <span>path trong URL sau /tok_.../</span></label>
+          <input id="content_path" type="text"
+            placeholder="video1/2022/12/09/11/b9fc87cf/b9fc87cf-..._m.m3u8" />
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="section-title">JWT Payload</div>
+      <div class="form-grid">
+        <div class="form-group span-2">
+          <label>path <span>JWT field · thường là prefix của content path</span></label>
+          <input id="jwt_path" type="text" placeholder="/video1/2022/12/09/11/b9fc87cf/" />
+        </div>
+        <div class="form-group">
+          <label>url <span>CDN Center LB IP</span></label>
+          <input id="jwt_url" type="text" placeholder="https://172.24.168.198" />
+        </div>
+        <div class="form-group">
+          <label>aud <span>cin_id · string</span></label>
+          <input id="jwt_aud" type="text" placeholder="12" />
+        </div>
+        <div class="form-group span-2">
+          <label>sources <span>JSON array of src_id</span></label>
+          <input id="jwt_sources" type="text" placeholder="[45,443,446,450]" />
+        </div>
+        <div class="form-group">
+          <label>Expire <span>phút kể từ bây giờ</span></label>
+          <input id="expire_min" type="number" value="60" min="1" />
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <details>
+        <summary>Session fields <span style="font-weight:400;color:#aaa">(mặc định rỗng / 0)</span></summary>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>sip</label>
+            <input id="jwt_sip" type="text" placeholder="" />
+          </div>
+          <div class="form-group">
+            <label>session_cdn_id</label>
+            <input id="jwt_session_cdn_id" type="text" placeholder="" />
+          </div>
+          <div class="form-group">
+            <label>session_id</label>
+            <input id="jwt_session_id" type="text" placeholder="" />
+          </div>
+          <div class="form-group">
+            <label>client_id</label>
+            <input id="jwt_client_id" type="text" placeholder="" />
+          </div>
+          <div class="form-group">
+            <label>device_id</label>
+            <input id="jwt_device_id" type="text" placeholder="" />
+          </div>
+          <div class="form-group">
+            <label>max_sessions</label>
+            <input id="jwt_max_sessions" type="number" value="0" />
+          </div>
+          <div class="form-group">
+            <label>session_duration</label>
+            <input id="jwt_session_duration" type="number" value="0" />
+          </div>
+          <div class="form-group">
+            <label>session_timeout</label>
+            <input id="jwt_session_timeout" type="number" value="0" />
+          </div>
+        </div>
+      </details>
+
+      <hr class="divider" />
+
+      <div class="section-title">Signing</div>
+      <div class="form-group">
+        <label>Secret Key <span>HS512</span></label>
+        <input id="secret_key" type="password" placeholder="POP secret key" />
+      </div>
+
+      <button class="generate" onclick="generate()">Tạo POP URL</button>
+    </div>
+
+    <!-- Result -->
+    <div class="card" id="result-card" style="display:none">
+      <div class="result-title">Kết quả</div>
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── JWT helpers ──────────────────────────────────────────────
+
+    function base64urlEncode(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      for (const b of bytes) binary += String.fromCharCode(b);
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_');
+    }
+
+    function base64urlEncodeBytes(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (const b of bytes) binary += String.fromCharCode(b);
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_');
+    }
+
+    function base64urlDecode(b64url) {
+      const pad = '='.repeat((4 - b64url.length % 4) % 4);
+      return atob(b64url.replace(/-/g, '+').replace(/_/g, '/') + pad);
+    }
+
+    async function signHS512(secret, signingInput) {
+      const key = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(secret),
+        { name: 'HMAC', hash: 'SHA-512' },
+        false,
+        ['sign']
+      );
+      const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signingInput));
+      return base64urlEncodeBytes(sig);
+    }
+
+    async function buildJWT(payload, secret) {
+      const header = { alg: 'HS512', typ: 'JWT' };
+      const h = base64urlEncode(JSON.stringify(header));
+      const p = base64urlEncode(JSON.stringify(payload));
+      const sig = await signHS512(secret, `${h}.${p}`);
+      return `${h}.${p}.${sig}`;
+    }
+
+    function parseJWTPayload(jwt) {
+      const parts = jwt.split('.');
+      if (parts.length < 2) return null;
+      try {
+        return JSON.parse(base64urlDecode(parts[1]));
+      } catch {
+        return null;
+      }
+    }
+
+    // ── Decode from URL ──────────────────────────────────────────
+
+    function decodeFromUrl() {
+      const raw = document.getElementById('decode_url').value.trim();
+      // Format: https://{domain}/tok_{header}.{payload}.{sig}/{content_path}
+      const match = raw.match(
+        /^https?:\/\/([^/]+)\/tok_([A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+)\/(.+)$/
+      );
+      if (!match) {
+        return showError('Không parse được URL. Định dạng cần: https://{domain}/tok_{jwt}/{path}');
+      }
+
+      const [, domain, jwt, contentPath] = match;
+      const payload = parseJWTPayload(jwt);
+      if (!payload) return showError('Không decode được JWT payload.');
+
+      document.getElementById('pop_domain').value          = domain;
+      document.getElementById('content_path').value        = contentPath;
+      document.getElementById('jwt_path').value            = payload.path            ?? '';
+      document.getElementById('jwt_url').value             = payload.url             ?? '';
+      document.getElementById('jwt_aud').value             = payload.aud             ?? '';
+      document.getElementById('jwt_sources').value         = JSON.stringify(payload.sources ?? []);
+      document.getElementById('jwt_sip').value             = payload.sip             ?? '';
+      document.getElementById('jwt_session_cdn_id').value  = payload.session_cdn_id  ?? '';
+      document.getElementById('jwt_session_id').value      = payload.session_id      ?? '';
+      document.getElementById('jwt_client_id').value       = payload.client_id       ?? '';
+      document.getElementById('jwt_device_id').value       = payload.device_id       ?? '';
+      document.getElementById('jwt_max_sessions').value    = payload.max_sessions    ?? 0;
+      document.getElementById('jwt_session_duration').value= payload.session_duration?? 0;
+      document.getElementById('jwt_session_timeout').value = payload.session_timeout ?? 0;
+
+      document.getElementById('result-card').style.display = 'none';
+    }
+
+    // ── Generate ─────────────────────────────────────────────────
+
+    async function generate() {
+      const domain      = document.getElementById('pop_domain').value.trim();
+      const contentPath = document.getElementById('content_path').value.trim().replace(/^\//, '');
+      const jwtPath     = document.getElementById('jwt_path').value.trim();
+      const jwtUrl      = document.getElementById('jwt_url').value.trim();
+      const jwtAud      = document.getElementById('jwt_aud').value.trim();
+      const sourcesRaw  = document.getElementById('jwt_sources').value.trim();
+      const expireMin   = Number(document.getElementById('expire_min').value) || 60;
+      const secret      = document.getElementById('secret_key').value;
+
+      if (!domain)      return showError('Vui lòng nhập POP Domain.');
+      if (!contentPath) return showError('Vui lòng nhập Content Path.');
+      if (!jwtPath)     return showError('Vui lòng nhập JWT path field.');
+      if (!jwtUrl)      return showError('Vui lòng nhập JWT url field (vd: https://172.24.168.198).');
+      if (!jwtAud)      return showError('Vui lòng nhập JWT aud (cin_id).');
+      if (!sourcesRaw)  return showError('Vui lòng nhập JWT sources.');
+      if (!secret)      return showError('Vui lòng nhập Secret Key.');
+
+      let sources;
+      try {
+        sources = JSON.parse(sourcesRaw);
+        if (!Array.isArray(sources)) throw new Error();
+      } catch {
+        return showError('sources phải là JSON array, ví dụ: [45,443,446,450]');
+      }
+
+      // exp là string theo format mẫu
+      const exp = String(Math.floor(Date.now() / 1000) + expireMin * 60);
+
+      // Giữ nguyên thứ tự field như mẫu
+      const payload = {
+        exp,
+        sip:              document.getElementById('jwt_sip').value,
+        path:             jwtPath,
+        session_cdn_id:   document.getElementById('jwt_session_cdn_id').value,
+        session_id:       document.getElementById('jwt_session_id').value,
+        client_id:        document.getElementById('jwt_client_id').value,
+        device_id:        document.getElementById('jwt_device_id').value,
+        max_sessions:     Number(document.getElementById('jwt_max_sessions').value) || 0,
+        session_duration: Number(document.getElementById('jwt_session_duration').value) || 0,
+        url:              jwtUrl,
+        session_timeout:  Number(document.getElementById('jwt_session_timeout').value) || 0,
+        aud:              jwtAud,
+        sources
+      };
+
+      try {
+        const jwt    = await buildJWT(payload, secret);
+        const popUrl = `https://${domain}/tok_${jwt}/${contentPath}`;
+        renderResult(popUrl, payload);
+      } catch (err) {
+        showError('Lỗi ký JWT: ' + err.message);
+      }
+    }
+
+    // ── Render ───────────────────────────────────────────────────
+
+    function renderResult(url, payload) {
+      const card = document.getElementById('result-card');
+      const el   = document.getElementById('result');
+      card.style.display = 'block';
+      el.innerHTML = `
+        <div class="payload-preview">${JSON.stringify(payload, null, 2)}</div>
+        <div class="url-item">
+          <div style="flex:1">
+            <div class="url-label">POP Direct URL</div>
+            <div class="url-text">${url.replace(/&/g, '&amp;')}</div>
+          </div>
+          <button class="copy" data-url="${url.replace(/"/g, '&quot;')}">Copy</button>
+        </div>
+      `;
+      el.querySelector('button.copy').addEventListener('click', e => {
+        copyUrl(e.target, e.target.dataset.url);
+      });
+    }
+
+    function showError(msg) {
+      const card = document.getElementById('result-card');
+      const el   = document.getElementById('result');
+      card.style.display = 'block';
+      el.innerHTML = `<div class="error">${msg}</div>`;
+    }
+
+    function copyUrl(btn, url) {
+      navigator.clipboard.writeText(url).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+      });
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') generate();
+    });
+  </script>
+</body>
+</html>
